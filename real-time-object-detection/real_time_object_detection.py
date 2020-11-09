@@ -35,9 +35,11 @@ net = cv2.dnn.readNetFromCaffe('MobileNetSSD_deploy.prototxt.txt', 'MobileNetSSD
 # initialize the video stream, allow the cammera sensor to warmup,
 # and initialize the FPS counter
 print("[INFO] starting video stream...")
-vs = VideoStream(src=0).start()
+vs = VideoStream(src='http://87.204.160.9/mjpg/video.mjpg').start()
 time.sleep(2.0)
 fps = FPS().start()
+
+parkingSpaces = [(280,210),(280,210),(280,210)]
 
 # loop over the frames from the video stream
 while True:
@@ -64,6 +66,7 @@ while True:
 
 		# filter out weak detections by ensuring the `confidence` is
 		# greater than the minimum confidence
+
 		if confidence > 0.2:
 			# extract the index of the class label from the
 			# `detections`, then compute the (x, y)-coordinates of
@@ -71,15 +74,20 @@ while True:
 			idx = int(detections[0, 0, i, 1])
 			box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
 			(startX, startY, endX, endY) = box.astype("int")
-
 			# draw the prediction on the frame
 			label = "{}: {:.2f}%".format(CLASSES[idx],
 				confidence * 100)
-			cv2.rectangle(frame, (startX, startY), (endX, endY),
-				COLORS[idx], 2)
-			y = startY - 15 if startY - 15 > 15 else startY + 15
-			cv2.putText(frame, label, (startX, y),
-				cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
+			if CLASSES[idx] == "car":
+
+				cv2.rectangle(frame, (startX, startY), (endX, endY),
+					COLORS[idx], 2)
+
+				for parkingSpace in parkingSpaces:
+					if startX < parkingSpace[0] < endX and startY < parkingSpace[1] < endY :
+						print('Parking Space {} is Occupied.'.format(parkingSpaces))
+				y = startY - 15 if startY - 15 > 15 else startY + 15
+				cv2.putText(frame, label, (startX, y),
+					cv2.FONT_HERSHEY_SIMPLEX, 0.5, COLORS[idx], 2)
 
 	# show the output frame
 	cv2.imshow("Frame", frame)
